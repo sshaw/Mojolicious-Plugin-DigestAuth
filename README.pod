@@ -1,0 +1,78 @@
+=head1 NAME
+
+Mojolicious::Plugin::DigestAuth - HTTP Digest Authentication for Mojolicious
+
+=head1 SYNOPSIS
+
+   plugin 'digest_auth';
+
+   get '/admin/users' => sub {
+       my $self = shift;
+       return unless $self->digest_auth(realm => 'Thangz',
+				        allow => '/some/file/htdigest_formated');
+
+       # ...
+   }
+
+   # Setup (and override) a lot of defaults
+   plugin 'digest_auth',
+	   realm => 'My Realm',
+	   expires => 120,
+	   algorithm => 'MD5-sess',
+	   allow => { 	
+	     # Will use 'My Realm'
+	     sshaw => 'Ay3Br4h_!',
+	     bob   => 'lovemywife'
+	   };
+
+   get '/account/edit' => sub { 
+       my $self = shift;
+       return unless $self->digest_auth;
+
+       # ...
+   }
+
+   # Override some of the defaults here
+   get '/' => sub { 
+       my $self = shift;
+       return unless $self->digest_auth(realm => 'RealmX',
+				        qop   => 'auth',
+				        algorithm => 'MD5,
+				        allow => { 
+				          RealmX => { user => 'password' }
+				       });
+
+       # ...
+   }
+  
+   # Setup authorization for a set of of routes
+   package YourApp;
+   use Mojo::Base 'Mojolicious';
+    
+   sub startup
+   {
+     my $self = shift;
+     $self->plugin('digest_auth');
+
+     # ...
+
+     my $admin = $self->digest_auth('/admin',
+			     	    realm => 'Admin',
+			     	    allow => '/www/auth/admin');
+     
+     $admin->route('/:id')->to('users#show');
+     $admin->route('/edit/:id')->to('users#edit')
+   }
+
+
+=head1 SEE ALSO
+
+L<Mojolicious>, L<Mojolicious::Plugin::BasicAuth>
+
+=head1 AUTHOR
+
+(C) 2011 Skye Shaw (sshaw AT lucas.cis.temple.edu)
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
