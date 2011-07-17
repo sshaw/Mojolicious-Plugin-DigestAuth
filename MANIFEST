@@ -1,0 +1,10 @@
+MANIFEST
+Makefile.PL
+lib/Mojolicious/Plugin/DigestAuth.pm
+lib/Mojolicious/Plugin/DigestAuth/DB.pm
+lib/Mojolicious/Plugin/DigestAuth/RequestHandler.pm
+lib/Mojolicious/Plugin/DigestAuth/Util.pm
+t/bad_htdigest
+t/db.t
+t/digest_auth.t
+t/good_htdigest
