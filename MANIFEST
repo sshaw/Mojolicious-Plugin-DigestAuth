@@ -1,5 +1,6 @@
 MANIFEST
 Makefile.PL
+README.pod
 lib/Mojolicious/Plugin/DigestAuth.pm
 lib/Mojolicious/Plugin/DigestAuth/DB.pm
 lib/Mojolicious/Plugin/DigestAuth/RequestHandler.pm

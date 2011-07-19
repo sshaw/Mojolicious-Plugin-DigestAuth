@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 9;
+use Test::More tests => 11;
 use Mojolicious::Plugin::DigestAuth::Util 'checksum';
 
 BEGIN { use_ok('Mojolicious::Plugin::DigestAuth::DB'); }
@@ -24,12 +24,13 @@ eval { Mojolicious::Plugin::DigestAuth::DB::File->new('does_not_exist') };
 like($@, qr/no such file/i);
 
 eval { Mojolicious::Plugin::DigestAuth::DB::File->new('t/bad_htdigest') };
-like($@, qr/invalid entry/);
+like($@, qr/invalid entry: sshaw/);
 
 my $users = {
     realm1 => {
 	sshaw => 'B1gpAss',
-	bob   => 'bob'
+	bob   => 'bob', 
+	''    => ''
     },	    
     realm2 => {
 	monkey => '_DeathMarch_'
@@ -48,6 +49,9 @@ $users = {
     },	    
     fofinha => {
 	aa => ''
+    },
+    X => {
+        '' => ''
     }
 };	
 

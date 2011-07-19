@@ -10,7 +10,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 use Mojolicious::Plugin::DigestAuth::DB;
 use Mojolicious::Plugin::DigestAuth::RequestHandler;
 
-our $VERSION = '0.001';
+our $VERSION = '0.001_1';
 
 sub register
 {
@@ -35,8 +35,7 @@ sub register
 	  $options->{password_db} = $allow;
 	}
 	elsif(ref($allow) eq 'HASH') {
-	  # Normalize simple config, otherwise we assume nested hash of realm => { user => 'password' }
-	  # Allow undef or blank password...?
+	  # Normalize simple config, otherwise we assume a hash of: realm => { user => 'password' ... }
 	  if(ref((values %$allow)[0]) ne 'HASH') {
 	    $allow = { $options->{realm} => { %$allow } };
 	  }
@@ -69,6 +68,8 @@ Mojolicious::Plugin::DigestAuth - HTTP Digest Authentication for Mojolicious
 
 =head1 SYNOPSIS
 
+   use Mojolicious::Lite;
+
    plugin 'digest_auth';
 
    get '/admin/users' => sub {
@@ -79,7 +80,7 @@ Mojolicious::Plugin::DigestAuth - HTTP Digest Authentication for Mojolicious
        # ...
    }
 
-   # Setup (and override) a lot of defaults
+   # Setup with user-defined defaults
    plugin 'digest_auth',
 	   realm => 'My Realm',
 	   expires => 120,
@@ -112,6 +113,7 @@ Mojolicious::Plugin::DigestAuth - HTTP Digest Authentication for Mojolicious
   
    # Setup authorization for a set of of routes
    package YourApp;
+
    use Mojo::Base 'Mojolicious';
     
    sub startup
@@ -129,6 +131,74 @@ Mojolicious::Plugin::DigestAuth - HTTP Digest Authentication for Mojolicious
      $admin->route('/edit/:id')->to('users#edit')
    }
 
+
+=head1 CONFIGURATION
+
+Options can be set globally when L<< loading the plugin|Mojolicious/plugin >>:
+
+   plugin 'digest_auth', %options
+
+Or locally when calling L<< C<digest_auth>|/digest_auth >> 
+
+    $self->digest_auth(%options);
+
+Local options override their global counterparts. 
+
+Digest Authentication can be perfomed on a set of routes:
+
+   sub startup
+   {
+     my $self = shift;
+     $self->plugin('digest_auth');
+
+     # ...
+
+     my $admin = $self->digest_auth('/admin', %options);
+     $admin->route('/edit/:id')->to('users#edit');
+   }
+
+Or from within an action:
+
+   sub some_action
+   {
+       my $self = shift;
+       return unless $self->digest_auth(realm => 'RealmX',
+				        allow => { 
+				          RealmX => { user => 'password' }
+				       });
+   }   
+
+=head1 METHODS
+
+=head2 digest_auth 
+
+   $self->digest_auth(allow => { bob => 'password' });
+
+   # or
+
+   my $r = $self->digest_auth('/admin', allow => { bob => 'password' });
+   $r->route('/new')->to('users#new');
+
+=head3 Arguments
+
+An optional URL prefix and/or an option hash
+
+...more to come...
+
+=head3 Returns
+
+Without a URL prefix:
+
+C<1> if authentication was successful, C<undef> otherwise. 
+
+With a URL prefix:
+
+An instance of L<Mojolicious::Routes>. Use this to define a set of actions to authenticate against. 
+In this case authentication is performed via a L<Mojolicious::Routes/bridge>.
+
+=head3 Errors
+
+Will C<croak> if any of the options are invalid.
 
 =head1 SEE ALSO
 

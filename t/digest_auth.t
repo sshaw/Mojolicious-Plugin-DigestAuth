@@ -85,7 +85,6 @@ sub build_auth_response
     $t->get_ok('/test_defaults', { Authorization => build_auth_response($t->tx, algorithm => 'unknown') }) 
 	->status_is(400)
 	->content_isnt("You're in!");
-
     $t->get_ok('/test_defaults');
     $t->get_ok('/test_defaults', { Authorization => build_auth_response($t->tx, qop => 'unknown') }) 
 	->status_is(400)
@@ -130,8 +129,7 @@ sub build_auth_response
 	my $self = shift;
 	$self->plugin('digest_auth');
 
-	my $r    = $self->routes;
-	$r = $self->digest_auth('/admin', allow => $users);	
+	my $r = $self->digest_auth('/admin', allow => $users);	
 	$r->route('/:id')->to('controller#show');	
     }
 
@@ -153,27 +151,30 @@ sub build_auth_response
         ->content_is('In!');
 }
 
-plugin 'digest_auth';
+{
 
-get '/test_nonce_expires' => sub {
-    my $self = shift;    
-    $self->render_text("You're in!") if $self->digest_auth(allow => $users, expires => 1);
-};
-
-my $t = Test::Mojo->new;     
-$t->get_ok('/test_nonce_expires')
-    ->status_is(401);
-
-my $headers = { Authorization => build_auth_response($t->tx) };
-$t->get_ok('/test_nonce_expires', $headers)
+    plugin 'digest_auth';
+    
+    get '/test_nonce_expires' => sub {
+	my $self = shift;    
+	$self->render_text("You're in!") if $self->digest_auth(allow => $users, expires => 1);
+    };
+    
+    my $t = Test::Mojo->new;     
+    $t->get_ok('/test_nonce_expires')
+	->status_is(401);
+    
+    my $headers = { Authorization => build_auth_response($t->tx) };
+    $t->get_ok('/test_nonce_expires', $headers)
     ->status_is(200);
-
-# Let nonce expire
-sleep(2);
-$t->get_ok('/test_nonce_expires', $headers)
-    ->status_is(401)
-    ->header_like('WWW-Authenticate', qr/stale=true/);
-
-# Authenticate with new nonce
-$t->get_ok('/test_nonce_expires', { Authorization => build_auth_response($t->tx) })
-    ->status_is(200);
+    
+    # Let nonce expire
+    sleep(2);
+    $t->get_ok('/test_nonce_expires', $headers)
+	->status_is(401)
+	->header_like('WWW-Authenticate', qr/stale=true/);
+    
+    # Authenticate with new nonce
+    $t->get_ok('/test_nonce_expires', { Authorization => build_auth_response($t->tx) })
+	->status_is(200);
+}

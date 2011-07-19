@@ -5,8 +5,7 @@ use warnings;
 use Carp 'croak';
 use Scalar::Util 'weaken';
 
-use Mojo::Command;
-use Mojo::Util qw{b64_encode b64_decode md5_sum unquote quote};
+use Mojo::Util qw{b64_encode b64_decode unquote quote};
 use Mojolicious::Plugin::DigestAuth::Util qw{checksum parse_header};
 
 my $QOP_AUTH = 'auth';
@@ -64,7 +63,6 @@ sub _controller
     (shift)->{controller};
 }
 
-
 sub _nonce_expired
 {
     my ($self, $nonce) = @_;
@@ -93,7 +91,7 @@ sub _valid_nonce
 sub _create_nonce
 {
     my $self  = shift;
-    my $t     = shift || time();
+    my $t     = time();
     my $nonce = sprintf '%s %s', $t, checksum($t, $self->{secret});
 
     b64_encode $nonce;
@@ -119,7 +117,6 @@ sub authenticate
 	    return;
 	}
 
-	#TODO: Authentication-Info header
 	# $header->{opaque} eq $self->{opaque} &&
 	# $self->_nonce_valid($header->{nonce});
 	if($self->_authorized($header)) {
@@ -134,9 +131,9 @@ sub authenticate
 sub _unauthorized
 {
     my $self = shift;
-    my $h = $self->_build_auth_header;
+    my $header = $self->_build_auth_header;
 
-    $self->_response->headers->www_authenticate($h);
+    $self->_response->headers->www_authenticate($header);
     $self->_response->code(401);
     $self->_controller->render(text => 'HTTP 401: Unauthorized');
 }
@@ -248,6 +245,7 @@ sub _compute_a2
     my ($self, $header) = @_;
     my @fields = ($self->_request->method, $header->{uri});
 
+# Not yet...
 #     if(defined $header->{qop} && $header->{qop} eq $QOP_AUTH_INT) {
 #         # TODO: has body been decoded?
 # 	push @fields, checksum($self->_request->content->headers->to_string . "\015\012\015\012" . $self->_request->body);
