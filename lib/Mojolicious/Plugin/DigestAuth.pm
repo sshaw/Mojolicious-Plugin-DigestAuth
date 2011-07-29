@@ -111,7 +111,7 @@ Mojolicious::Plugin::DigestAuth - HTTP Digest Authentication for Mojolicious
        # ...
    }
   
-   # Setup authorization for a set of of routes
+   # Setup authentication for a set of routes
    package YourApp;
 
    use Mojo::Base 'Mojolicious';
@@ -193,8 +193,8 @@ C<1> if authentication was successful, C<undef> otherwise.
 
 With a URL prefix:
 
-An instance of L<Mojolicious::Routes>. Use this to define a set of actions to authenticate against. 
-In this case authentication is performed via a L<Mojolicious::Routes/bridge>.
+An instance of L<Mojolicious::Routes>. Use this to define a set of actions that require authentication. 
+In this case authentication is performed via a L<bridge|Mojolicious::Guides::Routing/Bridges> with a callback.
 
 =head3 Errors
 
