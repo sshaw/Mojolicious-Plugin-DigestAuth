@@ -172,18 +172,58 @@ Or from within an action:
 
 =head2 digest_auth 
 
+   # In your action
    $self->digest_auth(allow => { bob => 'password' });
 
-   # or
-
+   # Or, in startup()
    my $r = $self->digest_auth('/admin', allow => { bob => 'password' });
    $r->route('/new')->to('users#new');
 
 =head3 Arguments
 
-An optional URL prefix and/or an option hash
+C<$url>
 
-...more to come...
+Optional. If provided authentication will be performed for all routes defined under C<$url>. 
+This form can only be used to configure authentication in your app's 
+L<< C<startup()>|Mojolicious/startup >> method.
+
+C<%options>
+
+=over4
+
+=item * C<< realm => 'Your Realm' >>
+
+Authentication realm. Defaults to C<< 'WWW' >>.
+
+=item * C<< allow => { user => password } >>
+
+=item * C<< allow => { realm => { user => password }} >>
+
+=item * C<< allow => 'htdigest_file' >>
+
+=item * C<< allow => $obj->can('get') >>
+
+Realms, usernames, and passwords used for authentication. Can be a hash reference, an Apache 
+htdigest like file, or an object that responds to C<get()>.
+
+When using a hash reference passwords must be given in plain text. Users without a realm 
+will be put in the realm specified by the C<realm> option. 
+If no realm option was provided the default realm (C<'WWW'>) is used. 
+
+When using an object arguments will be passed to C<get()> in the following order: 
+C<realm, username>. The C<get()> must return the hashed version of the password. 
+
+=item * C<< algorithm => 'MD5' | 'MD5-sess' >>
+
+Digest algorithm, either C<MD5> or C<MD5-sess>. Defaults to C<MD5>. C<MD5-sess> requires a C<qop>. 
+
+=item * C<< qop => 'auth' | '' >>
+
+=item * C<< expires => seconds >>
+
+Nonce lifetime. Defaults to C<300> seconds (5 minutes). 
+
+=back
 
 =head3 Returns
 

@@ -10,7 +10,7 @@ use Mojolicious::Plugin::DigestAuth::Util qw{checksum parse_header};
 
 my $QOP_AUTH = 'auth';
 my $QOP_AUTH_INT = 'auth-int';	
-my %VALID_QOPS = ($QOP_AUTH => 1, $QOP_AUTH_INT => 1);
+my %VALID_QOPS = ($QOP_AUTH => 1); #, $QOP_AUTH_INT => 1);
 
 my $ALGORITHM_MD5 = 'MD5';
 my $ALGORITHM_MD5_SESS = 'MD5-sess';
@@ -20,10 +20,10 @@ sub new
 {
     my ($class, $config) = @_;
     my $header = {
-	realm     => $config->{realm},
+	realm     => $config->{realm}	  || '',
 	domain    => $config->{domain}    || '/',
 	algorithm => $config->{algorithm} || $ALGORITHM_MD5,
-	qop       => defined $config->{qop} ? $config->{qop} : "$QOP_AUTH,$QOP_AUTH_INT" # No qop = ''
+	qop       => defined $config->{qop} ? $config->{qop} : $QOP_AUTH # "$QOP_AUTH,$QOP_AUTH_INT" # No qop = ''
     };
 
     $header->{opaque} = checksum($header->{domain}, $config->{secret});
@@ -37,13 +37,14 @@ sub new
     };
 
     for my $qop (split /\s*,\s*/, $header->{qop}) {
-	croak "unsupported qop: '$qop'" unless $VALID_QOPS{$qop};
-	$self->{supported_qops}->{$qop} = 1;
+	croak "unsupported qop: $qop" unless $VALID_QOPS{$qop};
+	$self->{qops}->{$qop} = 1;
     }
 
-    # MD5-sess requires a QOP!
-    croak "unsupported algorithm: '$header->{algorithm}'" unless $VALID_ALGORITHMS{$header->{algorithm}};
-    $self->{supported_algorithm} = $header->{algorithm};
+    croak "unsupported algorithm: $header->{algorithm}" unless $VALID_ALGORITHMS{$header->{algorithm}};
+    croak "algorithm $ALGORITHM_MD5_SESS requires a qop" if $header->{algorithm} eq $ALGORITHM_MD5_SESS and !$self->{qops};
+
+    $self->{algorithm} = $header->{algorithm};
 
     bless $self, $class;
 }
@@ -127,8 +128,7 @@ sub authenticate
 
     $self->_unauthorized;
 }
-#2I2274J79KQWD2SGOPLXLCD4U2NGIS
-#29D7WGKCCVLLADUWN58AVQ4CYJ24UK
+
 sub _unauthorized
 {
     my $self = shift;
@@ -159,20 +159,19 @@ sub _valid_header
 	$header->{opaque} &&
 	$header->{opaque} eq $self->{opaque} &&
 	exists $header->{username} &&
-	($header->{algorithm} && $self->{supported_algorithm} eq $header->{algorithm}) &&
+	($header->{algorithm} && $self->{algorithm} eq $header->{algorithm}) &&
 	($header->{qop} && $header->{nc} || !$header->{qop} && !defined $header->{nc}) &&
 	($header->{uri} && $self->_fix_uri($header->{uri}) eq $self->_request->url) &&
 
 	# Either there's no QOP from the client and we require one, or the client does not
 	# send a qop because they dont support what we want (i.e. auth-int).       
-	(defined $header->{qop} && $self->{supported_qops}->{$header->{qop}} ||
-	 !$header->{qop} && keys %{$self->{supported_qops}} != 0);
+	(defined $header->{qop} && $self->{qops}->{$header->{qop}} ||
+	 !$header->{qop} && keys %{$self->{qops}} != 0);
 
     return 1;
 }
 
-# IE 5 & 6 (others?) do not append the query string to the URI sent in the
-# Authentication header. Better to check user agent..?
+# IE 5 & 6 (others?) do not append the query string to the URI sent in the Authentication header.
 sub _fix_uri
 {
     my ($self, $uri) = @_;
@@ -190,8 +189,8 @@ sub _build_auth_header
     my $self   = shift;
     my $header = $self->{response_header};
 
-    my %quote;
-    @quote{qw{domain algorithm nonce opaque qop realm}} = ();
+    my %no_quote;
+    @no_quote{qw{algorithm stale}} = ();
 
     if($header->{stale} || !$header->{nonce}) {
 	$header->{nonce} = $self->_create_nonce;
@@ -199,11 +198,14 @@ sub _build_auth_header
 
     local $_;
     sprintf 'Digest %s', join ', ', map {
-	quote $header->{$_} if exists $quote{$_};
+	quote $header->{$_} unless exists $no_quote{$_};
 	"$_=$header->{$_}";
     } grep $header->{$_}, keys %$header;
 }
 
+
+# rename to _authenticate
+# and add some former 400 checks here
 sub _authorized
 {
     my ($self, $header) = @_;
@@ -232,10 +234,7 @@ sub _compute_a1
     my $hash = $self->{password_db}->get($header->{realm}, $header->{username});
 
     if($hash && $header->{algorithm} && $header->{algorithm} eq $ALGORITHM_MD5_SESS) {
-	my @fields = ($hash, $header->{nonce});
-	# qop required 4 checksum, yet it's an optional field?!
-	push @fields, $header->{cnonce} if $header->{qop};
-	$hash = checksum(@fields);
+	$hash = checksum($hash, $header->{nonce}, $header->{cnonce});
     }
 
     $hash;
