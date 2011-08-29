@@ -203,9 +203,6 @@ sub _build_auth_header
     } grep $header->{$_}, keys %$header;
 }
 
-
-# rename to _authenticate
-# and add some former 400 checks here
 sub _authorized
 {
     my ($self, $header) = @_;
