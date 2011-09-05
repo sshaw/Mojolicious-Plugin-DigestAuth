@@ -5,7 +5,7 @@ Mojolicious::Plugin::DigestAuth - HTTP Digest Authentication for Mojolicious
 =head1 SYNOPSIS
 
    $self->plugin('digest_auth');
- 
+
    # In your action
    return unless $self->digest_auth(allow => { sshaw => 'password' });
 
@@ -17,41 +17,40 @@ Mojolicious::Plugin::DigestAuth - HTTP Digest Authentication for Mojolicious
 
 =head2 SETUP
 
-Configuration can be done globally when L<< loading the plugin|Mojolicious/plugin >>
+Configuration can be done globally when loading the plugin
 
     $self->plugin('digest_auth', %options)
 
-or locally when calling L<< C<digest_auth>|/digest_auth >> 
+or locally when calling L<< C<digest_auth>|/digest_auth >>
 
     $self->digest_auth(%options);
 
-Local options override their global counterparts. For example, the following 
-configuration will apply to all authentication requests: 
+Local options override their global counterparts. For example, the following
+will apply to all authentication requests
 
    # setup()
-   $self->plugin('digest_auth', realm   => 'Thangz', 
-			        expires => 120, 
-				allow   => '/path/to/htdigest_file');
+   $self->plugin('digest_auth', realm   => 'Thangz',
+                                expires => 120,
+                                allow   => '/path/to/htdigest_file');
 
 
    # controller
    sub show
-   { 
+   {
        my $self = shift;
        return unless $self->digest_auth;
 
        # ...
    }
 
+But can be overridden within an action
 
-But can be overridden within an action 
-
-   sub edit 
-   { 
+   sub edit
+   {
        my $self = shift;
        return unless $self->digest_auth(realm   => 'RealmX',
-					expires => 24*3600,
-		                        allow   => { sshaw => 'Ay3Br4h_!' });
+                                        expires => 24*3600,
+                                        allow   => { sshaw => 'Ay3Br4h_!' });
        # ...
    }
 
@@ -59,48 +58,48 @@ For a full list of options see L</digest_auth>.
 
 =head2 AUTHENTICATION
 
-By default C<MD5/auth> authentication is performed. This can be overridden, see L</digest_auth>.
+By default MD5/auth authentication is performed. This is configurable, see L</digest_auth>.
 
 =head3 DB
 
 Authentication information is given via the C<allow> option and can be retrieved
-from a variety sources:
+from a variety of sources:
 
 =over 4
 
 =item * A hash reference without a realm
 
-    $self->plugin('digest_auth', allow => { sshaw => 'my_pAzw3rD', 
-					    admin => '->fofinha!' });
+    $self->plugin('digest_auth', allow => { sshaw => 'my_pAzw3rD',
+                                            admin => '->fofinha!' });
 
 In this case users will either be placed into the realm given by the C<realm> option or
 the default realm, C<WWW>.
 
-Password must be given in plain text.
+Passwords must be given in plain text.
 
 =item * A hash reference with realm(s)
 
     $self->plugin('digest_auth', allow => { 'Admin Realm' => { sshaw => 'my_pAzw3rD' },
-					    'WWW Users'   => { tony  => 'vrooooooom' });
+                                            'WWW Users'   => { tony  => 'vrooooooom' });
 
-Password must be given in plain text.
+Passwords must be given in plain text.
 
-=item * A C<htdigest> style file
+=item * A htdigest style file
 
-    $self->plugin('digest_auth', allow => '/home/sshaw/www_users'); 
+    $self->plugin('digest_auth', allow => '/home/sshaw/www_users');
 
 =item * An object with a C<get()> method that returns B<hashed> passwords
 
-    $self->plugin('digest_auth', allow => $db); 
+    $self->plugin('digest_auth', allow => $db);
 
-Arguments are passed to C<get()> in the following order: C<realm, username>. 
+Arguments are passed to C<get()> in the following order: C<realm, username>.
 
 =back
 
 =head3 PERFORMING AUTHENTICATION
 
-Authentication can be perfomed by calling the C<digest_auth> method
-from within the action you'd like to protect:
+Authentication can be performed by calling the C<digest_auth> method
+from within the action you'd like to protect
 
    sub some_action
    {
@@ -110,14 +109,13 @@ from within the action you'd like to protect:
        # Authenticated users get here
    }
 
-If authentication is successful C<digest_auth> returns true, otherwise C<undef> is returned 
-and a HTTP 401 status code and the message: C<HTTP 401: Unauthorized> are sent 
-to the client. Currently this message cannot be changed. 
+If authentication is successful C<digest_auth> returns true, otherwise C<undef> is returned
+and a HTTP 401 status code and the message: C<HTTP 401: Unauthorized> are sent
+to the client. Currently this message cannot be changed.
 
 Authentication can also be performed for a set of routes by calling
-C<digest_auth> from within your application's 
-L<< startup function|Mojolicious/startup >>. In this case authentication will be performed 
-automatically for all of the routes defined under the given URL:
+C<digest_auth> from within your application's startup function. This form performs authentication automatically
+for all of the routes defined under the given URL:
 
    package YouWebApp;
 
@@ -139,7 +137,23 @@ In this case authentication is performed via a L<bridge|Mojolicious::Guides::Rou
 
 =head1 METHODS
 
-=head2 digest_auth 
+=head2 plugin
+
+     $self->plugin('digest_auth', %options)
+
+Loads the plugin and sets up the defaults given by C<%options>.
+
+=head3 Arguments
+
+C<%options>
+
+See L</digest_auth>.
+
+=head3 Errors
+
+This method will C<croak> if if any of the options are invalid or if there is an error loading the password database.
+
+=head2 digest_auth
 
      $self->digest_auth(%options)
      $routes = $self->digest_auth($url, %options)
@@ -149,7 +163,7 @@ In this case authentication is performed via a L<bridge|Mojolicious::Guides::Rou
 C<$url>
 
 Optional. If provided authentication will be performed for all routes defined under C<$url>.
-See L</CONFIGURATION>.
+See L</PERFORMING AUTHENTICATION>.
 
 C<%options>
 
@@ -167,7 +181,7 @@ See L</AUTHENTICATION>.
 
 =item * C<< algorithm => 'MD5' | 'MD5-sess' >>
 
-Digest algorithm, either C<MD5> or C<MD5-sess>. Defaults to C<MD5>. C<MD5-sess> requires a C<qop>. 
+Digest algorithm, either C<'MD5'> or C<'MD5-sess'>. Defaults to C<'MD5'>. C<'MD5-sess'> requires a C<qop>.
 
 =item * C<< domain => '/path' | 'your.domain.com' >>
 
@@ -175,9 +189,11 @@ Authentication domain. Defaults to C<'/'>.
 
 =item * C<< expires => seconds >>
 
-Nonce lifetime. Defaults to C<300> seconds (5 minutes). 
+Nonce lifetime. Defaults to C<300> seconds (5 minutes).
 
 =item * C<< qop => 'auth' | '' >>
+
+Quality of protection. Defaults to C<'auth'>. C<auth-int> is not supported.
 
 =item * C<< realm => 'Your Realm' >>
 
@@ -193,7 +209,7 @@ True if authentication was successful, C<undef> otherwise. If unsuccessful a HTT
 
 With a URL prefix:
 
-An instance of L<Mojolicious::Routes>. See L</CONFIGURATION>.
+An instance of L<Mojolicious::Routes>. See L</PERFORMING AUTHENTICATION>.
 
 =head3 Errors
 
