@@ -176,6 +176,7 @@ sub _valid_header
 sub _fix_uri
 {
     my ($self, $uri) = @_;
+    $uri =~ s!^/!!;
     my $params = $self->_request->query_params->to_string;
 
     if($uri && $self->_request->method eq 'GET' && $params && index($uri, '?') == -1) {
