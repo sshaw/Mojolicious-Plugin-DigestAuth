@@ -2,11 +2,12 @@ package Mojolicious::Plugin::DigestAuth::RequestHandler;
 
 use strict;
 use warnings;
+
 use Carp 'croak';
 use Scalar::Util 'weaken';
+use Data::Dump;
 
-use Mojo::Util qw{b64_encode b64_decode unquote quote};
-use Mojolicious::Plugin::DigestAuth::Util qw{checksum parse_header};
+use Mojolicious::Plugin::DigestAuth::Util qw{checksum parse_header quote b64_encode b64_decode};
 
 my $QOP_AUTH = 'auth';
 my $QOP_AUTH_INT = 'auth-int';
@@ -20,19 +21,20 @@ sub new
 {
     my ($class, $config) = @_;
     my $header = {
-        realm     => $config->{realm}     || '',
-        domain    => $config->{domain}    || '/',
+        realm => $config->{realm}     || '',
+        domain => $config->{domain}    || '/',
         algorithm => $config->{algorithm} || $ALGORITHM_MD5,
-        qop       => defined $config->{qop} ? $config->{qop} : $QOP_AUTH # "$QOP_AUTH,$QOP_AUTH_INT" # No qop = ''
+        qop => defined $config->{qop} ? $config->{qop} : $QOP_AUTH # "$QOP_AUTH,$QOP_AUTH_INT" # No qop = ''
     };
 
     $header->{opaque} = checksum($header->{domain}, $config->{secret});
 
     my $self  = {
-        opaque         => $header->{opaque},
-        secret         => $config->{secret},
-        expires        => $config->{expires},
-        password_db    => $config->{password_db},
+        opaque => $header->{opaque},
+        secret => $config->{secret},
+        expires => $config->{expires},
+        password_db => $config->{password_db},
+	support_broken_browsers => $config->{support_broken_browsers} || 1,
         default_header => $header,
     };
 
@@ -47,7 +49,7 @@ sub new
     $self->{algorithm} = $header->{algorithm};
 
     bless $self, $class;
-}
+}  
 
 sub _request
 {
@@ -76,9 +78,7 @@ sub _nonce_expired
 sub _parse_nonce
 {
     my ($self, $nonce) = @_;
-
-    b64_decode $nonce;
-    split ' ', $nonce, 2;
+    split ' ', b64_decode($nonce), 2;
 }
 
 sub _valid_nonce
@@ -93,11 +93,8 @@ sub _create_nonce
 {
     my $self  = shift;
     my $t     = time();
-    my $nonce = sprintf '%s %s', $t, checksum($t, $self->{secret});
-
-    b64_encode $nonce;
+    my $nonce = b64_encode(sprintf('%s %s', $t, checksum($t, $self->{secret})));
     chomp $nonce;
-
     $nonce;
 }
 
@@ -110,16 +107,17 @@ sub authenticate
 
     $self->{response_header} = { %{$self->{default_header}} };
 
-    my $auth = $self->_request->headers->authorization;
+    my $auth = $self->_auth_header;
+	#print STDERR "   # " . Data::Dump::pp($self->_request->env);
+	#print STDERR "   # " . Data::Dump::pp($self->_request->headers->to_hash);
     if($auth) {
         my $header = parse_header($auth);
+	#print STDERR "   # " . Data::Dump::pp($self->_request->env);
         if(!$self->_valid_header($header)) {
             $self->_bad_request;
             return;
         }
 
-        # $header->{opaque} eq $self->{opaque} &&
-        # $self->_nonce_valid($header->{nonce});
         if($self->_authorized($header)) {
             return 1 unless $self->_nonce_expired($header->{nonce});
             $self->{response_header}->{stale} = 'true';
@@ -127,6 +125,14 @@ sub authenticate
     }
 
     $self->_unauthorized;
+}
+
+# TODO: $self->_request->headers->proxy_authorization
+sub _auth_header
+{
+  my $self = shift;
+  $self->_request->headers->authorization; 
+  # || $self->_request->env('X_HTTP_AUTHORIZATION') # Mojo does s/-/_/g
 }
 
 sub _unauthorized
@@ -146,43 +152,150 @@ sub _bad_request
     $self->_controller->render(text => 'HTTP 400: Bad Request');
 }
 
-# TODO: IE6 only sends opaque with the initial reply
 sub _valid_header
 {
     my ($self, $header) = @_;
 
-    # Uhhh seriously..?
-    return unless
-        $header &&
-        $header->{realm} &&
-        $header->{nonce} &&
-        $header->{response} &&
-        $header->{opaque} &&
-        $header->{opaque} eq $self->{opaque} &&
-        exists $header->{username} &&
-        ($header->{algorithm} && $self->{algorithm} eq $header->{algorithm}) &&
-        ($header->{qop} && $header->{nc} || !$header->{qop} && !defined $header->{nc}) &&
-        ($header->{uri} && $self->_fix_uri($header->{uri}) eq $self->_request->url) &&
-
-        # Either there's no QOP from the client and we require one, or the client does not
-        # send a qop because they dont support what we want (i.e. auth-int).
-        (defined $header->{qop} && $self->{qops}->{$header->{qop}} ||
-         !$header->{qop} && keys %{$self->{qops}} != 0);
-
-    return 1;
+    $self->_header_complete($header) &&
+    $self->_url_matches($header->{uri}) &&
+    $self->_valid_qop($header->{qop}, $header->{nc}) &&
+    $self->_valid_opaque($header->{opaque}) &&
+    $self->{algorithm} eq $header->{algorithm};
 }
 
-# IE 5 & 6 do not append the query string to the URI sent in the Authentication header.
-sub _fix_uri
+sub _url_matches
 {
-    my ($self, $uri) = @_;
-    my $params = $self->_request->query_params->to_string;
+    my $self = shift;
 
-    if($uri && $self->_request->method eq 'GET' && $params && index($uri, '?') == -1) {
-        $uri .= "?$params";
+    my $auth_url = shift;
+    return unless $auth_url;
+    $auth_url = _normalize_url($auth_url);
+    
+    my $req_url = $self->_url; 
+    
+    if($self->_support_broken_browser) {
+      # IE 5/6 do not append the querystring on GET requests
+      my $i = index($req_url, '?');
+      if($self->_request->method eq 'GET' && $i != -1 && index($auth_url, '?') == -1) {
+      	  $auth_url .= '?' . substr($req_url, $i);
+      }
     }
+    
+    #print STDERR "Mojo: $req_url  Auth: $auth_url\n";
+    
+    $auth_url eq $req_url;
+}
 
-    $uri;
+#
+# We try to avoid using the URL provided by Mojo because:
+#
+# * Depending on the app's config it will not contain the URL requested by the client
+#   it will contain PATH_INFO + QUERY_STRING i.e. /mojo.pl/users/sshaw?x=y will be /users/sshaw?x=y
+#    
+# * Mojo::URL has/had several bugs and has undergone several changes that have broken backwards 
+#   compatibility.
+#
+sub _url
+{
+  my $self = shift;
+  my $env = $self->_request->env;
+  my $url;
+
+  if($env->{REQUEST_URI}) {
+    $url = $env->{REQUEST_URI};
+  }
+  elsif($env->{SCRIPT_NAME}) {
+    $url = "$env->{SCRIPT_NAME}$env->{PATH_INFO}";
+    $url .= "?$env->{QUERY_STRING}" if $env->{QUERY_STRING};
+  }
+  elsif($self->_request->url) {
+    $url = $self->_request->url->to_string;
+  }
+  else {
+    $url = '/';
+  }
+
+  _normalize_url($url);
+}
+
+# We want the URL to be relative to '/'
+sub _normalize_url
+{
+  my $s = shift;
+  $s =~ s|^https?://[^/?#]*||i;    
+  $s =~ s|/{2,}|/|g;    
+  #$s .= '/' unless $s =~ m|/$|;  # Mojo will not remove domain name when using to_rel() unless it ends in a slash
+  
+  # my $noramlized = $url->to_rel($url->clone)->to_string;	
+  # # Mojo to_rel returns '' when the path is '/';  
+  # $noramlized = '/' unless $noramlized ;
+  
+  my $url = Mojo::URL->new($s);  
+  my @parts = @{$url->path->parts};
+  my @normalized;
+  
+  for my $part (@parts) {
+    if($part eq '..' && @normalized) {
+      pop @normalized;
+      next;
+    }
+    
+    push @normalized, $part; 
+  }
+
+  #print STDERR "   # RV-> ", join('/', @normalized), "\n";
+
+  $url->path->parts(\@normalized);
+  $url->path->leading_slash(0);
+  $url->to_string;
+}
+
+sub _support_broken_browser
+{
+    my $self = shift;
+    $self->{support_broken_browsers} && $self->_request->headers->user_agent =~ m|\bMSIE\s+[56]\.|;    
+}
+
+sub _valid_qop
+{
+  my ($self, $qop, $nc) = @_;
+  my $valid;
+
+  #
+  # Either there's no QOP from the client and we require one, or the client does not
+  # send a qop because they dont support what we want (e.g., auth-int).
+  #
+  # And, if there's a qop, then there must be a nonce count.
+  #
+
+  if(defined $qop) {
+    $valid = $self->{qops}->{$qop} && $nc;
+  }
+  else {
+    $valid = %{$self->{qops}} == 0 && !defined $nc;
+  }
+  
+  $valid;
+}
+
+sub _valid_opaque
+{
+  my ($self, $opaque) = @_;
+
+  # IE 5 & 6 only sends opaque with the initial reply but we'll just ignore it regardless
+  $self->_support_broken_browser || $opaque && $opaque eq $self->{opaque};  
+}
+
+sub _header_complete
+{
+    my ($self, $header) = @_;
+    
+    $header &&
+    $header->{realm} &&
+    $header->{nonce} &&
+    $header->{response} &&
+    $header->{algorithm} && 
+    exists $header->{username};
 }
 
 sub _build_auth_header
@@ -190,18 +303,21 @@ sub _build_auth_header
     my $self   = shift;
     my $header = $self->{response_header};
 
-    my %no_quote;
-    @no_quote{qw{algorithm stale}} = ();
-
     if($header->{stale} || !$header->{nonce}) {
         $header->{nonce} = $self->_create_nonce;
     }
 
-    local $_;
-    sprintf 'Digest %s', join ', ', map {
-        quote $header->{$_} unless exists $no_quote{$_};
-        "$_=$header->{$_}";
-    } grep $header->{$_}, keys %$header;
+    my %no_quote;
+    @no_quote{qw{algorithm stale}} = ();
+
+    my @auth;
+    while(my ($k, $v) = each %$header) {
+      next unless $v;
+      $v = quote($v) unless exists $no_quote{$k};
+      push @auth, "$k=$v";
+    }
+
+    'Digest ' . join(', ', @auth);
 }
 
 sub _authorized

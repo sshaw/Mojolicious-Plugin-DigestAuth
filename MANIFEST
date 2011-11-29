@@ -1,11 +1,14 @@
-MANIFEST
-Makefile.PL
-README.pod
+CHANGES
 lib/Mojolicious/Plugin/DigestAuth.pm
 lib/Mojolicious/Plugin/DigestAuth/DB.pm
 lib/Mojolicious/Plugin/DigestAuth/RequestHandler.pm
 lib/Mojolicious/Plugin/DigestAuth/Util.pm
+Makefile.PL
+MANIFEST			This list of files
+README.pod
 t/bad_htdigest
 t/db.t
 t/digest_auth.t
 t/good_htdigest
+t/TestHelper.pm
+t/url.t

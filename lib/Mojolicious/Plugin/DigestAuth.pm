@@ -181,7 +181,7 @@ Authentication can also be performed for a set of routes by calling
 C<digest_auth> from within your application's startup function. This form performs authentication automatically
 for all of the routes defined under the given URL:
 
-   package YouWebApp;
+   package YourWebApp;
 
    use Mojo::Base 'Mojolicious';
 
@@ -241,7 +241,7 @@ C<%options>
 
 =item * C<< allow => $obj >>
 
-See L</AUTHENTICATION>.
+See L</DB>.
 
 =item * C<< algorithm => 'MD5' | 'MD5-sess' >>
 

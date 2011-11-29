@@ -11,7 +11,6 @@ WriteMakefile(
        (META_MERGE  => { resources => { bugtracker => 'http://github.com/sshaw/Mojolicious-Plugin-DigestAuth/issues' } }) : ())     
 );
 
-
 # Create README.pod for a repo's GitHub page. Unlike CPAN, GitHub won't 
 # display the module's POD, it looks for a README.*
 sub MY::postamble

@@ -1,13 +1,20 @@
 use strict;
 use warnings;
+use lib 't';
 
 use Test::More 'no_plan';
 use Test::Mojo;
+#use TestHelper;
 
 use Mojolicious::Lite;
 use Mojolicious::Plugin::DigestAuth::Util qw{parse_header checksum};
 
 my $users = { sshaw => 'itzme!' };
+
+# options (defaults, invalid)
+# requests 
+# bridge
+# nonce
 
 # This fx() should use the same code as DigestAuth!
 sub build_auth_response
@@ -31,7 +38,7 @@ sub build_auth_response
     }
     
     $res_header->{nc} ||= 1;
-    $res_header->{cnonce} ||= time;
+    $res_header->{cnonce} ||= time();
     $res_header->{qop} ||= 'auth';
     $res_header->{username} = $user;
     $res_header->{response} = checksum(checksum($user, $res_header->{realm}, $pass),
@@ -63,24 +70,24 @@ sub build_auth_response
     get '/no_allow'  => sub { $error_checker->(shift) };
     get '/wrong_qop' => sub { $error_checker->(shift, allow => $users, qop => 'huh?') };
     get '/MD5-sess_no_qop' => sub { $error_checker->(shift, allow => $users, algorithm => 'MD5-sess', qop => '') };
-    get '/wrong_algorithm' => sub { $error_checker->(shift, allow => $users, algorithm => '3DES') };
-    
-    my $t = Test::Mojo->new;
-    $t->get_ok('/no_allow');
-    $t->status_is(500);
-    $t->content_like(qr/you must setup an authentication source/);
+    get '/wrong_algorithm' => sub { $error_checker->(shift, allow => $users, algorithm => '3DES') };    
 
-    $t->get_ok('/MD5-sess_no_qop');
-    $t->status_is(500);
-    $t->content_like(qr/requires a qop/);
+     my $t = Test::Mojo->new;
+     $t->get_ok('/no_allow');
+     $t->status_is(500);
+     $t->content_like(qr/you must setup an authentication source/);
 
-    $t->get_ok('/wrong_qop');
-    $t->status_is(500);
-    $t->content_like(qr/unsupported qop/);
+     $t->get_ok('/MD5-sess_no_qop');
+     $t->status_is(500);
+     $t->content_like(qr/requires a qop/);
 
-    $t->get_ok('/wrong_algorithm');
-    $t->status_is(500);
-    $t->content_like(qr/unsupported algorithm/);
+     $t->get_ok('/wrong_qop');
+     $t->status_is(500);
+     $t->content_like(qr/unsupported qop/);
+
+     $t->get_ok('/wrong_algorithm');
+     $t->status_is(500);
+     $t->content_like(qr/unsupported algorithm/);
 }
 
 {
@@ -115,16 +122,17 @@ sub build_auth_response
     $t->get_ok('/test_defaults', { Authorization => build_auth_response($t->tx, username => 'sshaw', password => 'bad_bad_bad') })
 	->status_is(401)
 	->content_is('HTTP 401: Unauthorized');
-
-    $t->get_ok('/test_defaults', { Authorization => build_auth_response($t->tx, username => 'not_in_realm') })
-	->status_is(401);
+# #REQ
+    
+    # $t->get_ok('/test_defaults', { Authorization => build_auth_response($t->tx, username => 'not_in_realm') })
+    # 	->status_is(401);
 
     $t->get_ok('/test_defaults', { Authorization => build_auth_response($t->tx, username => '', password => '') })
-	->status_is(401);
+    	->status_is(401);
     
     $t->get_ok('/test_defaults', { Authorization => build_auth_response($t->tx, algorithm => 'unknown') }) 
-	->status_is(400)
-	->content_is('HTTP 400: Bad Request');
+    	->status_is(400)
+    	->content_is('HTTP 400: Bad Request');
 
     $t->get_ok('/test_defaults');
     $t->get_ok('/test_defaults', { Authorization => build_auth_response($t->tx, qop => 'unknown') }) 
@@ -135,14 +143,15 @@ sub build_auth_response
 	->status_is(400);
 
     $t->get_ok('/test_defaults');
-    $t->get_ok('/test_defaults', { Authorization => build_auth_response($t->tx) })
+    $t->get_ok('/test_defaults', { Authorization => build_auth_response($t->tx), HTTP_SCRIPT_NAME => 'Ass'})
 	->status_is(200)
 	->content_is("You're in!");
 
+    # Needs useragent of IE
     # Test without query string 
-    $t->get_ok('/test_defaults');
-    $t->get_ok('/test_defaults?a=b&x=y', { Authorization => build_auth_response($t->tx, uri => '/test_defaults') })
-	->status_is(200);
+#    $t->get_ok('/test_defaults');
+#    $t->get_ok('/test_defaults?a=b&x=y', { Authorization => build_auth_response($t->tx, uri => '/test_defaults') })
+#	->status_is(200);
 
     $t->post_ok('/test_defaults');
     $t->post_ok('/test_defaults', { Authorization => build_auth_response($t->tx) }) 
@@ -162,8 +171,10 @@ sub build_auth_response
     $t->get_ok('/test_defaults_overridden');
     $t->get_ok('/test_defaults_overridden', { Authorization => build_auth_response($t->tx, algorithm => 'MD5') })
 	->status_is(400);
+
 }
- 
+
+#OPT 
 {
     plugin 'digest_auth', domain => 'example.com', 
     			  realm => 'Default', 
@@ -181,6 +192,7 @@ sub build_auth_response
 	->header_like('WWW-Authenticate', qr/algorithm=MD5-sess/);    
 }
 
+# BR
 {
     package App;
     use Mojo::Base 'Mojolicious';
@@ -213,6 +225,7 @@ sub build_auth_response
         ->content_is('In!');
 }
 
+#Nonce
 {
 
     plugin 'digest_auth';
