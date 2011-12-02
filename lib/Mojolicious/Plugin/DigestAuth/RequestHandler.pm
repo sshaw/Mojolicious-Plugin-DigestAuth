@@ -5,7 +5,6 @@ use warnings;
 
 use Carp 'croak';
 use Scalar::Util 'weaken';
-use Data::Dump;
 
 use Mojolicious::Plugin::DigestAuth::Util qw{checksum parse_header quote b64_encode b64_decode};
 
@@ -34,7 +33,7 @@ sub new
         secret => $config->{secret},
         expires => $config->{expires},
         password_db => $config->{password_db},
-	support_broken_browsers => $config->{support_broken_browsers} || 1,
+	support_broken_browsers => defined $config->{support_broken_browsers} ? $config->{support_broken_browsers} : 0,
         default_header => $header,
     };
 
@@ -108,11 +107,8 @@ sub authenticate
     $self->{response_header} = { %{$self->{default_header}} };
 
     my $auth = $self->_auth_header;
-	#print STDERR "   # " . Data::Dump::pp($self->_request->env);
-	#print STDERR "   # " . Data::Dump::pp($self->_request->headers->to_hash);
     if($auth) {
         my $header = parse_header($auth);
-	#print STDERR "   # " . Data::Dump::pp($self->_request->env);
         if(!$self->_valid_header($header)) {
             $self->_bad_request;
             return;
@@ -177,7 +173,7 @@ sub _url_matches
       # IE 5/6 do not append the querystring on GET requests
       my $i = index($req_url, '?');
       if($self->_request->method eq 'GET' && $i != -1 && index($auth_url, '?') == -1) {
-      	  $auth_url .= '?' . substr($req_url, $i);
+      	  $auth_url .= '?' . substr($req_url, $i+1);
       }
     }
     
@@ -205,7 +201,8 @@ sub _url
     $url = $env->{REQUEST_URI};
   }
   elsif($env->{SCRIPT_NAME}) {
-    $url = "$env->{SCRIPT_NAME}$env->{PATH_INFO}";
+    $url = $env->{SCRIPT_NAME};
+    $url .= $env->{PATH_INFO} if $env->{PATH_INFO};
     $url .= "?$env->{QUERY_STRING}" if $env->{QUERY_STRING};
   }
   elsif($self->_request->url) {
@@ -224,12 +221,7 @@ sub _normalize_url
   my $s = shift;
   $s =~ s|^https?://[^/?#]*||i;    
   $s =~ s|/{2,}|/|g;    
-  #$s .= '/' unless $s =~ m|/$|;  # Mojo will not remove domain name when using to_rel() unless it ends in a slash
-  
-  # my $noramlized = $url->to_rel($url->clone)->to_string;	
-  # # Mojo to_rel returns '' when the path is '/';  
-  # $noramlized = '/' unless $noramlized ;
-  
+
   my $url = Mojo::URL->new($s);  
   my @parts = @{$url->path->parts};
   my @normalized;
@@ -242,8 +234,6 @@ sub _normalize_url
     
     push @normalized, $part; 
   }
-
-  #print STDERR "   # RV-> ", join('/', @normalized), "\n";
 
   $url->path->parts(\@normalized);
   $url->path->leading_slash(0);

@@ -1,7 +1,7 @@
 -------------------------
 v0.03	2011-11-24
 -------------------------
-* Fixed URL comparision (Bug #1) 
+* Fixed URL comparison (Bug #1) 
 * Fixed various things broken by new releases of Mojolicious
 * Fixed  uninitialized value warnings from checksum()
 * Changed how the current request's URL is found

@@ -7,10 +7,11 @@ use base 'Exporter';
 use Mojolicious::Lite;
 use Mojolicious::Plugin::DigestAuth::Util qw{checksum parse_header};
 
-our @EXPORT = qw{build_auth_request users create_action};
+our @EXPORT = qw{build_auth_request users create_action IE6};
 
 my $users = { sshaw => 'itzme!' };
 sub users { $_[0] ? $users->{$_[0]} : $users }
+sub IE6 { 'Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.1)' }
 
 sub create_action
 {
@@ -26,30 +27,12 @@ sub create_action
     };
 }
 
-sub create_actionaaa
-{
-    my $req = pop;
-    my $url = '/test';
-    $url = shift if @_ % 2;
-    
-    my $options = { @_ };
-    $options->{allow} ||= users();
-    plugin 'digest_auth';
-    get $url => sub { 
-	my $self = shift;
-	$self->render_text("You're in!") if $self->digest_auth($options);
-    };
-    
-    $req->();
-}
-
 # This fx() should use the same code as DigestAuth!
 sub build_auth_request
 {
     my ($tx, %defaults) = @_;
     my $req_header = parse_header($tx->res->headers->www_authenticate);	
     use Data::Dump 'dd';
-    #dd($req_header);
     #dd($tx->res->headers->to_hash);
     my $res_header = {};
     my $user = delete $defaults{username};
@@ -64,7 +47,7 @@ sub build_auth_request
     @$res_header{@common_parts, keys %defaults} = (@$req_header{@common_parts}, values %defaults);
 
     # Test::Mojo handles the url differently between versions
-    if(!$res_header->{uri}) {
+    if(!defined $res_header->{uri}) {
 	$res_header->{uri} = $tx->req->url->path->to_string;
 	$res_header->{uri} .= '?' . $tx->req->url->query if $tx->req->url->query->to_string;
     }
@@ -79,6 +62,8 @@ sub build_auth_request
 				       $res_header->{cnonce},
 				       $res_header->{qop},
 				       checksum($tx->req->method, $res_header->{uri}));    
+
+    #dd($req_header);
 
     { Authorization => sprintf('Digest %s', join ', ', map { qq|$_="$res_header->{$_}"| } keys %$res_header) };      
 }
