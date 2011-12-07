@@ -4,8 +4,8 @@ use lib 't';
 
 use Mojolicious::Lite;
 
+use Test::More tests => 35;
 use Test::Mojo;
-use Test::More 'no_plan';
 
 use TestHelper;
  
@@ -22,6 +22,7 @@ my $error_checker = sub {
     $self->render(text => $reply);
 };
 
+# TODO: Need test with options to plugin call
 plugin 'digest_auth';
 
 get '/no_allow' => sub { $error_checker->(shift) };
@@ -58,65 +59,26 @@ $t->get_ok('/test_defaults')
   ->header_like('WWW-Authenticate', qr/qop="auth"/)  #,auth-int"/)
   ->content_isnt("You're in!");
 
-$t->get_ok('/test_defaults', build_auth_request($t->tx, username => 'sshaw', password => 'bad_bad_bad'))
-  ->status_is(401)
-  ->content_is('HTTP 401: Unauthorized');
-
-# #REQ    
-# $t->get_ok('/test_defaults', { Authorization => build_auth_request($t->tx, username => 'not_in_realm') })
-#   ->status_is(401);
-
-$t->get_ok('/test_defaults', build_auth_request($t->tx, username => '', password => ''))
-  ->status_is(401);
-    
-$t->get_ok('/test_defaults', build_auth_request($t->tx, algorithm => 'unknown'))
-  ->status_is(400)
-  ->content_is('HTTP 400: Bad Request');
-
-$t->get_ok('/test_defaults')
-  ->status_is(401);
-$t->get_ok('/test_defaults', build_auth_request($t->tx, qop => 'unknown')) 
-  ->status_is(400);
-
-$t->get_ok('/test_defaults')
-  ->status_is(401);
-$t->get_ok('/test_defaults', build_auth_request($t->tx, opaque => 'baaaaahd'))
-  ->status_is(400);
-
-$t->get_ok('/test_defaults')
-  ->status_is(401);
-$t->get_ok('/test_defaults', build_auth_request($t->tx))
-  ->status_is(200)
-  ->content_is("You're in!");
-
+# Belongs here?
 # By default support_broken_browsers = 1 
 $t->get_ok('/test_defaults?a=b')
   ->status_is(401);
 $t->get_ok('/test_defaults?a=b', { %{build_auth_request($t->tx)}, 'User-Agent' => IE6 })
   ->status_is(200)
   ->content_is("You're in!");
-
-$t->post_ok('/test_defaults')
-  ->status_is(401);
-$t->post_ok('/test_defaults', build_auth_request($t->tx))
-  ->status_is(200)
-  ->content_is("You're in!");
+####
 
 get '/test_defaults_overridden' => create_action(realm     => 'MD5-sess Realm',
-						 domain    => 'example.com,dev.example.com',						 
+						 domain    => 'example.com,dev.example.com',
 						 algorithm => 'MD5-sess');
 							                  
 $t->get_ok('/test_defaults_overridden')    
   ->status_is(401)
   ->header_like('WWW-Authenticate', qr/realm="MD5-sess Realm"/)
   ->header_like('WWW-Authenticate', qr/domain="example.com,dev.example.com"/)
-  ->header_like('WWW-Authenticate', qr/algorithm=MD5-sess/)
-  ->header_unlike('WWW-Authenticate', qr/qop=auth/);   
+  ->header_like('WWW-Authenticate', qr/algorithm=MD5-sess/);
 
-$t->get_ok('/test_defaults_overridden', { Authorization => build_auth_request($t->tx, qop => 'auth-int') })
-  ->status_is(400);
-
-$t->get_ok('/test_defaults_overridden');
-$t->get_ok('/test_defaults_overridden', { Authorization => build_auth_request($t->tx, algorithm => 'MD5') })
-  ->status_is(400);
-
+get '/test_no_qop' => create_action(qop => '');
+$t->get_ok('/test_no_qop')    
+  ->status_is(401)
+  ->header_unlike('WWW-Authenticate', qr/qop="\w+"/);   

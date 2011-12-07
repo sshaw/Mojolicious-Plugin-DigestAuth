@@ -20,32 +20,36 @@ sub new
 {
     my ($class, $config) = @_;
     my $header = {
-        realm => $config->{realm}     || '',
-        domain => $config->{domain}    || '/',
+        qop	  => $config->{qop},
+        realm     => $config->{realm}     || '',
+        domain    => $config->{domain}    || '/',
         algorithm => $config->{algorithm} || $ALGORITHM_MD5,
-        qop => defined $config->{qop} ? $config->{qop} : $QOP_AUTH # "$QOP_AUTH,$QOP_AUTH_INT" # No qop = ''
     };
 
+    # No qop = ''
+    $header->{qop} = $QOP_AUTH unless defined $header->{qop}; # "$QOP_AUTH,$QOP_AUTH_INT" 
     $header->{opaque} = checksum($header->{domain}, $config->{secret});
 
-    my $self  = {
-        opaque => $header->{opaque},
-        secret => $config->{secret},
-        expires => $config->{expires},
-        password_db => $config->{password_db},
-	support_broken_browsers => defined $config->{support_broken_browsers} ? $config->{support_broken_browsers} : 0,
+    my $self = {
+	qops           => {},
+        opaque         => $header->{opaque},
+        secret         => $config->{secret},
+        expires        => $config->{expires},
+	algorithm      => $header->{algorithm},
+        password_db    => $config->{password_db},
         default_header => $header,
+	support_broken_browsers => $config->{support_broken_browsers}
     };
+
+    $self->{support_broken_browsers} = 1 unless defined $self->{support_broken_browsers};
 
     for my $qop (split /\s*,\s*/, $header->{qop}) {
         croak "unsupported qop: $qop" unless $VALID_QOPS{$qop};
         $self->{qops}->{$qop} = 1;
     }
 
-    croak "unsupported algorithm: $header->{algorithm}" unless $VALID_ALGORITHMS{$header->{algorithm}};
-    croak "algorithm $ALGORITHM_MD5_SESS requires a qop" if $header->{algorithm} eq $ALGORITHM_MD5_SESS and !$self->{qops};
-
-    $self->{algorithm} = $header->{algorithm};
+    croak "unsupported algorithm: $self->{algorithm}" unless $VALID_ALGORITHMS{$self->{algorithm}};
+    croak "algorithm $ALGORITHM_MD5_SESS requires a qop" if $self->{algorithm} eq $ALGORITHM_MD5_SESS and ! %{$self->{qops}};
 
     bless $self, $class;
 }  
@@ -127,8 +131,8 @@ sub authenticate
 sub _auth_header
 {
   my $self = shift;
-  $self->_request->headers->authorization; 
-  # || $self->_request->env('X_HTTP_AUTHORIZATION') # Mojo does s/-/_/g
+  $self->_request->headers->authorization or  
+  $self->_request->env->{'X_HTTP_AUTHORIZATION'} # Mojo does s/-/_/g
 }
 
 sub _unauthorized
@@ -257,12 +261,11 @@ sub _valid_qop
   #
   # And, if there's a qop, then there must be a nonce count.
   #
-
   if(defined $qop) {
     $valid = $self->{qops}->{$qop} && $nc;
   }
   else {
-    $valid = %{$self->{qops}} == 0 && !defined $nc;
+    $valid = %{$self->{qops}} && !defined $nc;
   }
   
   $valid;

@@ -7,11 +7,12 @@ Makefile.PL
 MANIFEST			This list of files
 README.pod
 t/00db.t
-t/01url.t
+t/01options.t
+t/02digest_auth.t
+t/03url.t
 t/bad_htdigest
 t/good_htdigest
 t/nonce.t
-t/options.t
 t/route.t
 t/support_broken_browsers.t
 t/TestHelper.pm

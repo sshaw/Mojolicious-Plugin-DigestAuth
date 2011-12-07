@@ -32,18 +32,15 @@ sub build_auth_request
 {
     my ($tx, %defaults) = @_;
     my $req_header = parse_header($tx->res->headers->www_authenticate);	
-    use Data::Dump 'dd';
-    #dd($tx->res->headers->to_hash);
     my $res_header = {};
     my $user = delete $defaults{username};
     my $pass = delete $defaults{password};
     my @common_parts = qw{algorithm nonce opaque realm};	
 
-    local $_;
-
     $user = 'sshaw' if !defined $user;
     $pass = users($user) || '' if !defined $pass;
 
+    local $_;
     @$res_header{@common_parts, keys %defaults} = (@$req_header{@common_parts}, values %defaults);
 
     # Test::Mojo handles the url differently between versions
@@ -62,8 +59,6 @@ sub build_auth_request
 				       $res_header->{cnonce},
 				       $res_header->{qop},
 				       checksum($tx->req->method, $res_header->{uri}));    
-
-    #dd($req_header);
 
     { Authorization => sprintf('Digest %s', join ', ', map { qq|$_="$res_header->{$_}"| } keys %$res_header) };      
 }

@@ -3,6 +3,7 @@ use warnings;
 use lib 't';
 
 use Mojolicious::Lite;
+use Test::More tests => 68;
 use Test::Mojo;
 
 use TestHelper;

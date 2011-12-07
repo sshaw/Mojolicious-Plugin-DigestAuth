@@ -2,6 +2,7 @@ use strict;
 use warnings;
 use lib 't';
 
+use Test::More tests => 6;
 use Test::Mojo;
 use TestHelper;
 

@@ -6,6 +6,7 @@ use Mojolicious::Lite;
 use Test::Mojo;
 
 use Mojolicious::Plugin::DigestAuth::Util 'parse_header';
+use Test::More tests => 13;
 use TestHelper;
 
 my $url = '/';

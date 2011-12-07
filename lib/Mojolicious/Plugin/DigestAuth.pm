@@ -10,7 +10,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 use Mojolicious::Plugin::DigestAuth::DB;
 use Mojolicious::Plugin::DigestAuth::RequestHandler;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 sub register
 {
@@ -61,6 +61,8 @@ sub register
 1;
 
 __END__
+
+=pod
 
 =head1 NAME
 
@@ -163,7 +165,7 @@ Arguments are passed to C<get()> in the following order: C<realm, username>.
 =head3 PERFORMING AUTHENTICATION
 
 Authentication can be performed by calling the C<digest_auth> method
-from within the action you'd like to protect
+from within the action you'd like to protect:
 
    sub some_action
    {
@@ -198,6 +200,14 @@ for all of the routes defined under the given URL:
    }
 
 In this case authentication is performed via a L<bridge|Mojolicious::Guides::Routing/Bridges> with a callback.
+
+=head3 WEB SERVERS
+
+Authentication will fail if your web server does not pass the Authorization header to your application. 
+In Apache this can be achieved with C<mod_rewrite>:
+
+   RewriteEngine On
+   RewriteRule ^ - [E=X-HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
 =head1 METHODS
 
@@ -245,7 +255,7 @@ See L</DB>.
 
 =item * C<< algorithm => 'MD5' | 'MD5-sess' >>
 
-Digest algorithm, either C<'MD5'> or C<'MD5-sess'>. Defaults to C<'MD5'>. C<'MD5-sess'> requires a C<qop>.
+Digest algorithm, either C<'MD5'> or C<'MD5-sess'>. Defaults to C<'MD5'>, C<'MD5-sess'> requires a C<qop>.
 
 =item * C<< domain => '/path' | 'your.domain.com' >>
 
@@ -257,11 +267,18 @@ Nonce lifetime. Defaults to C<300> seconds (5 minutes).
 
 =item * C<< qop => 'auth' | '' >>
 
-Quality of protection. Defaults to C<'auth'>. C<auth-int> is not supported.
+Quality of protection. Defaults to C<'auth'>.  C<auth-int> is not supported.
 
 =item * C<< realm => 'Your Realm' >>
 
 Authentication realm. Defaults to C<'WWW'>.
+
+=item * C<< support_broken_browsers => 1 | 0 >>
+
+When processing requests from certain browsers skip steps that would otherwise result in a HTTP 400 response. Defaults to C<1>. 
+
+Currently only applies to IE 5 and 6. These two browsers fail to append the query string to the URI included in the 
+Authorization header and, after authenticating, fail to include the opaque value. 
 
 =back
 
