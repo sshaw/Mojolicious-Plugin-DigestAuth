@@ -265,7 +265,7 @@ sub _valid_qop
     $valid = $self->{qops}->{$qop} && $nc;
   }
   else {
-    $valid = %{$self->{qops}} && !defined $nc;
+    $valid = !%{$self->{qops}} && !defined $nc;
   }
   
   $valid;
