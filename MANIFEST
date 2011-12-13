@@ -1,4 +1,5 @@
-CHANGES
+Changes
+INSTALL.SKIP
 lib/Mojolicious/Plugin/DigestAuth.pm
 lib/Mojolicious/Plugin/DigestAuth/DB.pm
 lib/Mojolicious/Plugin/DigestAuth/RequestHandler.pm

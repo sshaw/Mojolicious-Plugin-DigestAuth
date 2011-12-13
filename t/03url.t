@@ -11,7 +11,7 @@ use TestHelper;
 my $url = '/';
 get $url => create_action();
 
-# Mojo related URL handling
+# # Mojo related URL handling
 my $t = Test::Mojo->new;
 $t->get_ok($url)
   ->status_is(401);
@@ -23,11 +23,14 @@ $t->get_ok($url)
 $t->get_ok($url, build_auth_request($t->tx, uri => '//'))
     ->status_is(200);
 
-$t->get_ok($url)
-  ->status_is(401);
-$t->get_ok($url, build_auth_request($t->tx, uri => '/?'))
-  ->status_is(200);
-    
+SKIP: {
+    skip 'Mojo::Parameters bug causes test to fail prior to v1.45', 4 if !eval { Mojolicious->VERSION(1.45) };
+    $t->get_ok($url)
+      ->status_is(401);
+    $t->get_ok($url, build_auth_request($t->tx, uri => '/?'))
+      ->status_is(200);
+}
+
 $t->get_ok($url)
   ->status_is(401);
 $t->get_ok($url, build_auth_request($t->tx, uri => 'http://a.com'))

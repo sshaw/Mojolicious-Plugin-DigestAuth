@@ -44,6 +44,7 @@ sub build_auth_request
     @$res_header{@common_parts, keys %defaults} = (@$req_header{@common_parts}, values %defaults);
 
     # Test::Mojo handles the url differently between versions
+    # What versions? Is this still necessary, maybe it was pre 1.32?
     if(!defined $res_header->{uri}) {
 	$res_header->{uri} = $tx->req->url->path->to_string;
 	$res_header->{uri} .= '?' . $tx->req->url->query if $tx->req->url->query->to_string;

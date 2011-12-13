@@ -1,5 +1,5 @@
 -------------------------
-v0.03	2011-11-24
+2011-12-12	v0.03	
 -------------------------
 * Fixed URL comparison (Bug #1) 
 * Fixed various things broken by new releases of Mojolicious

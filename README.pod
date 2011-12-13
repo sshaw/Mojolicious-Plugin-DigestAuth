@@ -139,8 +139,8 @@ In this case authentication is performed via a L<bridge|Mojolicious::Guides::Rou
 
 =head3 WEB SERVERS
 
-Authentication will fail if your web server does not pass the Authorization header to your application. 
-In Apache this can be achieved with C<mod_rewrite>:
+Authentication will fail if your application is sitting behind a web server does not pass the Authorization header 
+to your application. In Apache this can be achieved with C<mod_rewrite>:
 
    RewriteEngine On
    RewriteRule ^ - [E=X-HTTP_AUTHORIZATION:%{HTTP:Authorization}]

@@ -180,9 +180,7 @@ sub _url_matches
       	  $auth_url .= '?' . substr($req_url, $i+1);
       }
     }
-    
-    #print STDERR "Mojo: $req_url  Auth: $auth_url\n";
-    
+        
     $auth_url eq $req_url;
 }
 
@@ -244,6 +242,7 @@ sub _normalize_url
   $url->to_string;
 }
 
+# TODO (maybe): IE 6 sends a new nonce every time when using MD5-sess
 sub _support_broken_browser
 {
     my $self = shift;
@@ -257,7 +256,7 @@ sub _valid_qop
 
   #
   # Either there's no QOP from the client and we require one, or the client does not
-  # send a qop because they dont support what we want (e.g., auth-int).
+  # send a qop because they dont support what we want (e.g., auth-int). 
   #
   # And, if there's a qop, then there must be a nonce count.
   #
@@ -265,7 +264,7 @@ sub _valid_qop
     $valid = $self->{qops}->{$qop} && $nc;
   }
   else {
-    $valid = %{$self->{qops}} && !defined $nc;
+    $valid = !%{$self->{qops}} && !defined $nc;
   }
   
   $valid;

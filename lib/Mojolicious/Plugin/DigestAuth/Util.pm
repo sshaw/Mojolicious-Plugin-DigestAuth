@@ -30,7 +30,7 @@ sub parse_header
 }
 
 #
-# These 4 methods are used to maintain backwards compatibility with older versions
+# These 4 functions are used to maintain backwards compatibility with older versions
 # of Mojolicious and will be removed in the next release.
 #
 sub quote
