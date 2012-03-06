@@ -21,7 +21,7 @@ eval { Mojolicious::Plugin::DigestAuth::DB::Hash->new };
 like($@, qr/usage:/);
 
 eval { Mojolicious::Plugin::DigestAuth::DB::File->new('does_not_exist') };
-like($@, qr/no such file/i);
+like($@, qr/error opening/i);
 
 eval { Mojolicious::Plugin::DigestAuth::DB::File->new('t/bad_htdigest') };
 like($@, qr/invalid entry: sshaw/);
