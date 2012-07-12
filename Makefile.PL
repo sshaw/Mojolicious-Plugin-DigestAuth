@@ -3,7 +3,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
      NAME          => 'Mojolicious::Plugin::DigestAuth',
      AUTHOR        => 'Skye Shaw <sshaw AT lucas.cis.temple.edu>',	      
-     PREREQ_PM     => { 'Mojolicious' => '1.31' },
+     PREREQ_PM     => { 'Mojolicious' => '2.20' },
      LICENSE       => 'perl',
      VERSION_FROM  => 'lib/Mojolicious/Plugin/DigestAuth.pm',
      ABSTRACT_FROM => 'lib/Mojolicious/Plugin/DigestAuth.pm',

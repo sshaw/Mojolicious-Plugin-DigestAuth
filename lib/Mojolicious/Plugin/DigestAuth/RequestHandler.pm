@@ -6,7 +6,8 @@ use warnings;
 use Carp 'croak';
 use Scalar::Util 'weaken';
 
-use Mojolicious::Plugin::DigestAuth::Util qw{checksum parse_header quote b64_encode b64_decode};
+use Mojo::Util qw{quote b64_encode b64_decode};
+use Mojolicious::Plugin::DigestAuth::Util qw{checksum parse_header};
 
 my $QOP_AUTH = 'auth';
 my $QOP_AUTH_INT = 'auth-int';
