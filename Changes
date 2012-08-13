@@ -1,5 +1,5 @@
 -------------------------
-XXXX-XX-XX	v0.04	
+2012-09-13	v0.04	
 -------------------------
 * Removed some methods from Util used for Mojo::Util backwards compatibility
 * Fixed 00db.t, now passes on non en-US locale boxes (thanks Dmitriy Shalashov & Alexander Bendo)
