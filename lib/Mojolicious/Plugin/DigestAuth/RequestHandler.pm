@@ -21,25 +21,25 @@ sub new
 {
     my ($class, $config) = @_;
     my $header = {
-        qop	  => $config->{qop},
+        qop       => $config->{qop},
         realm     => $config->{realm}     || '',
         domain    => $config->{domain}    || '/',
         algorithm => $config->{algorithm} || $ALGORITHM_MD5,
     };
 
     # No qop = ''
-    $header->{qop} = $QOP_AUTH unless defined $header->{qop}; # "$QOP_AUTH,$QOP_AUTH_INT" 
+    $header->{qop} = $QOP_AUTH unless defined $header->{qop}; # "$QOP_AUTH,$QOP_AUTH_INT"
     $header->{opaque} = checksum($header->{domain}, $config->{secret});
 
     my $self = {
-	qops           => {},
+        qops           => {},
         opaque         => $header->{opaque},
         secret         => $config->{secret},
         expires        => $config->{expires},
-	algorithm      => $header->{algorithm},
+        algorithm      => $header->{algorithm},
         password_db    => $config->{password_db},
         default_header => $header,
-	support_broken_browsers => $config->{support_broken_browsers}
+        support_broken_browsers => $config->{support_broken_browsers}
     };
 
     $self->{support_broken_browsers} = 1 unless defined $self->{support_broken_browsers};
@@ -53,7 +53,7 @@ sub new
     croak "algorithm $ALGORITHM_MD5_SESS requires a qop" if $self->{algorithm} eq $ALGORITHM_MD5_SESS and ! %{$self->{qops}};
 
     bless $self, $class;
-}  
+}
 
 sub _request
 {
@@ -126,13 +126,14 @@ sub authenticate
     }
 
     $self->_unauthorized;
+    return;
 }
 
 # TODO: $self->_request->headers->proxy_authorization
 sub _auth_header
 {
   my $self = shift;
-  $self->_request->headers->authorization or  
+  $self->_request->headers->authorization or
   $self->_request->env->{'X_HTTP_AUTHORIZATION'} # Mojo does s/-/_/g
 }
 
@@ -171,17 +172,17 @@ sub _url_matches
     my $auth_url = shift;
     return unless $auth_url;
     $auth_url = _normalize_url($auth_url);
-    
-    my $req_url = $self->_url; 
-    
+
+    my $req_url = $self->_url;
+
     if($self->_support_broken_browser) {
       # IE 5/6 do not append the querystring on GET requests
       my $i = index($req_url, '?');
       if($self->_request->method eq 'GET' && $i != -1 && index($auth_url, '?') == -1) {
-      	  $auth_url .= '?' . substr($req_url, $i+1);
+          $auth_url .= '?' . substr($req_url, $i+1);
       }
     }
-        
+
     $auth_url eq $req_url;
 }
 
@@ -190,8 +191,8 @@ sub _url_matches
 #
 # * Depending on the app's config it will not contain the URL requested by the client
 #   it will contain PATH_INFO + QUERY_STRING i.e. /mojo.pl/users/sshaw?x=y will be /users/sshaw?x=y
-#    
-# * Mojo::URL has/had several bugs and has undergone several changes that have broken backwards 
+#
+# * Mojo::URL has/had several bugs and has undergone several changes that have broken backwards
 #   compatibility.
 #
 sub _url
@@ -222,20 +223,20 @@ sub _url
 sub _normalize_url
 {
   my $s = shift;
-  $s =~ s|^https?://[^/?#]*||i;    
-  $s =~ s|/{2,}|/|g;    
+  $s =~ s|^https?://[^/?#]*||i;
+  $s =~ s|/{2,}|/|g;
 
-  my $url = Mojo::URL->new($s);  
+  my $url = Mojo::URL->new($s);
   my @parts = @{$url->path->parts};
   my @normalized;
-  
+
   for my $part (@parts) {
     if($part eq '..' && @normalized) {
       pop @normalized;
       next;
     }
-    
-    push @normalized, $part; 
+
+    push @normalized, $part;
   }
 
   $url->path->parts(\@normalized);
@@ -247,7 +248,7 @@ sub _normalize_url
 sub _support_broken_browser
 {
     my $self = shift;
-    $self->{support_broken_browsers} && $self->_request->headers->user_agent =~ m|\bMSIE\s+[56]\.|;    
+    $self->{support_broken_browsers} && $self->_request->headers->user_agent =~ m|\bMSIE\s+[56]\.|;
 }
 
 sub _valid_qop
@@ -257,7 +258,7 @@ sub _valid_qop
 
   #
   # Either there's no QOP from the client and we require one, or the client does not
-  # send a qop because they dont support what we want (e.g., auth-int). 
+  # send a qop because they dont support what we want (e.g., auth-int).
   #
   # And, if there's a qop, then there must be a nonce count.
   #
@@ -267,7 +268,7 @@ sub _valid_qop
   else {
     $valid = !%{$self->{qops}} && !defined $nc;
   }
-  
+
   $valid;
 }
 
@@ -276,18 +277,18 @@ sub _valid_opaque
   my ($self, $opaque) = @_;
 
   # IE 5 & 6 only sends opaque with the initial reply but we'll just ignore it regardless
-  $self->_support_broken_browser || $opaque && $opaque eq $self->{opaque};  
+  $self->_support_broken_browser || $opaque && $opaque eq $self->{opaque};
 }
 
 sub _header_complete
 {
     my ($self, $header) = @_;
-    
+
     $header &&
     $header->{realm} &&
     $header->{nonce} &&
     $header->{response} &&
-    $header->{algorithm} && 
+    $header->{algorithm} &&
     exists $header->{username};
 }
 

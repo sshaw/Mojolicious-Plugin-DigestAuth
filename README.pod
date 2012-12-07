@@ -139,7 +139,7 @@ In this case authentication is performed via a L<bridge|Mojolicious::Guides::Rou
 
 =head3 WEB SERVERS
 
-Authentication will fail if your application is sitting behind a web server does not pass the Authorization header 
+Authentication will fail if your application is sitting behind a web server does not pass the Authorization header
 to your application. In Apache this can be achieved with C<mod_rewrite>:
 
    RewriteEngine On
@@ -211,10 +211,10 @@ Authentication realm. Defaults to C<'WWW'>.
 
 =item * C<< support_broken_browsers => 1 | 0 >>
 
-When processing requests from certain browsers skip steps that would otherwise result in a HTTP 400 response. Defaults to C<1>. 
+When processing requests from certain browsers skip steps that would otherwise result in a HTTP 400 response. Defaults to C<1>.
 
-Currently only applies to IE 5 and 6. These two browsers fail to append the query string to the URI included in the 
-Authorization header and, after authenticating, fail to include the opaque value. 
+Currently only applies to IE 5 and 6. These two browsers fail to append the query string to the URI included in the
+Authorization header and, after authenticating, fail to include the opaque value.
 
 =back
 

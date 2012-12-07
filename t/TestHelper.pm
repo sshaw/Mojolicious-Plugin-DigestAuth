@@ -19,11 +19,11 @@ sub create_action
     $options->{allow} ||= users();
 
     my $env = delete $options->{env} || {};
-    sub { 
-	my $self = shift;
-	$self->app->plugin('digest_auth', $options);
-	$self->req->env($env);
-	$self->render_text("You're in!") if $self->digest_auth;
+    sub {
+        my $self = shift;
+        $self->app->plugin('digest_auth', $options);
+        $self->req->env($env);
+        $self->render_text("You're in!") if $self->digest_auth;
     };
 }
 
@@ -31,11 +31,11 @@ sub create_action
 sub build_auth_request
 {
     my ($tx, %defaults) = @_;
-    my $req_header = parse_header($tx->res->headers->www_authenticate);	
+    my $req_header = parse_header($tx->res->headers->www_authenticate);
     my $res_header = {};
     my $user = delete $defaults{username};
     my $pass = delete $defaults{password};
-    my @common_parts = qw{algorithm nonce opaque realm};	
+    my @common_parts = qw{algorithm nonce opaque realm};
 
     $user = 'sshaw' if !defined $user;
     $pass = users($user) || '' if !defined $pass;
@@ -46,22 +46,22 @@ sub build_auth_request
     # Test::Mojo handles the url differently between versions
     # What versions? Is this still necessary, maybe it was pre 1.32?
     if(!defined $res_header->{uri}) {
-	$res_header->{uri} = $tx->req->url->path->to_string;
-	$res_header->{uri} .= '?' . $tx->req->url->query if $tx->req->url->query->to_string;
+        $res_header->{uri} = $tx->req->url->path->to_string;
+        $res_header->{uri} .= '?' . $tx->req->url->query if $tx->req->url->query->to_string;
     }
-    
+
     $res_header->{nc} ||= 1;
     $res_header->{cnonce} ||= time();
     $res_header->{qop} ||= 'auth';
     $res_header->{username} = $user;
     $res_header->{response} = checksum(checksum($user, $res_header->{realm}, $pass),
-				       $res_header->{nonce},
-				       $res_header->{nc},
-				       $res_header->{cnonce},
-				       $res_header->{qop},
-				       checksum($tx->req->method, $res_header->{uri}));    
+                                       $res_header->{nonce},
+                                       $res_header->{nc},
+                                       $res_header->{cnonce},
+                                       $res_header->{qop},
+                                       checksum($tx->req->method, $res_header->{uri}));
 
-    { Authorization => sprintf('Digest %s', join ', ', map { qq|$_="$res_header->{$_}"| } keys %$res_header) };      
+    { Authorization => sprintf('Digest %s', join ', ', map { qq|$_="$res_header->{$_}"| } keys %$res_header) };
 }
 
 1;
