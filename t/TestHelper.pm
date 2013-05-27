@@ -23,7 +23,7 @@ sub create_action
         my $self = shift;
         $self->app->plugin('digest_auth', $options);
         $self->req->env($env);
-        $self->render_text("You're in!") if $self->digest_auth;
+        $self->render(text => "You're in!") if $self->digest_auth;
     };
 }
 
