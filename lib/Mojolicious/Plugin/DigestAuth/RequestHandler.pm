@@ -143,6 +143,7 @@ sub _unauthorized
     my $header = $self->_build_auth_header;
 
     $self->_response->headers->www_authenticate($header);
+    $self->_response->headers->content_type('text/plain');
     $self->_response->code(401);
     $self->_controller->render(text => 'HTTP 401: Unauthorized');
 }
@@ -151,6 +152,7 @@ sub _bad_request
 {
     my $self = shift;
     $self->_response->code(400);
+    $self->_response->headers->content_type('text/plain');
     $self->_controller->render(text => 'HTTP 400: Bad Request');
 }
 

@@ -23,7 +23,7 @@ sub create_action
         my $self = shift;
         $self->app->plugin('digest_auth', $options);
         $self->req->env($env);
-        $self->render_text("You're in!") if $self->digest_auth;
+        $self->render(text => "You're in!") if $self->digest_auth;
     };
 }
 
@@ -40,7 +40,6 @@ sub build_auth_request
     $user = 'sshaw' if !defined $user;
     $pass = users($user) || '' if !defined $pass;
 
-    local $_;
     @$res_header{@common_parts, keys %defaults} = (@$req_header{@common_parts}, values %defaults);
 
     # Test::Mojo handles the url differently between versions

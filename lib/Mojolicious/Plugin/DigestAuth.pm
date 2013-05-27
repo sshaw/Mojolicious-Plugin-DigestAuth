@@ -10,7 +10,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 use Mojolicious::Plugin::DigestAuth::DB;
 use Mojolicious::Plugin::DigestAuth::RequestHandler;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 sub register
 {
