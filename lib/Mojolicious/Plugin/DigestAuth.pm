@@ -10,7 +10,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 use Mojolicious::Plugin::DigestAuth::DB;
 use Mojolicious::Plugin::DigestAuth::RequestHandler;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 sub register
 {
@@ -18,7 +18,7 @@ sub register
 
     my %defaults = %$user_defaults;
     $defaults{realm}   ||= 'WWW';
-    $defaults{secret}  ||= $app->secret;
+    $defaults{secret}  ||= $app->can('secret') ? $app->secret : ($app->secrets||[])[0]; # >= 4.91 has no secret()
     $defaults{expires} ||= 300;
 
     $app->helper(digest_auth => sub {
