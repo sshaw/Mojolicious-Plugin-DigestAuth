@@ -18,7 +18,7 @@ sub register
 
     my %defaults = %$user_defaults;
     $defaults{realm}   ||= 'WWW';
-    $defaults{secret}  ||= $app->can('secret') ? $app->secret : ($app->secrets||[])[0]; # >= 4.91 has no secret()
+    $defaults{secret}  ||= $app->can('secret') ? $app->secret : ($app->secrets||[])->[0]; # >= 4.91 has no secret()
     $defaults{expires} ||= 300;
 
     $app->helper(digest_auth => sub {
