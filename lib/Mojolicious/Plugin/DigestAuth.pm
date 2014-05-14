@@ -153,7 +153,7 @@ Passwords must be given in plain text.
 
 Passwords must be given in plain text.
 
-=item * A htdigest style file
+=item * An htdigest style file
 
     $self->plugin('digest_auth', allow => '/home/sshaw/www_users');
 
@@ -314,7 +314,7 @@ L<Mojolicious>, L<Mojolicious::Plugin::BasicAuth>, http://en.wikipedia.org/wiki/
 
 =head1 AUTHOR
 
-Skye Shaw (sshaw AT lucas.cis.temple.edu)
+Skye Shaw (skye.shaw AT gmail.com)
 
 =head1 LICENSE
 
