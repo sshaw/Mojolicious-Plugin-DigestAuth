@@ -1,4 +1,8 @@
 -------------------------
+2014-05-13	v0.08
+* Forgot to deference array returned from app->secrets(); this was caused by too much ruby programming :) (Bug #7, thanks Roberto Frenna)
+
+-------------------------
 2014-05-12	v0.07
 * Call app->secrets() when app->secret() is not available (Bug #6)
 

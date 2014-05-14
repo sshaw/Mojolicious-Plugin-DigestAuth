@@ -18,8 +18,9 @@ sub register
 
     my %defaults = %$user_defaults;
     $defaults{realm}   ||= 'WWW';
-    $defaults{secret}  ||= $app->can('secret') ? $app->secret : ($app->secrets||[])[0]; # >= 4.91 has no secret()
     $defaults{expires} ||= 300;
+    $defaults{secret}  ||= $app->can('secret') ? $app->secret : $app->secrets; # >= 4.91 has no secret()
+    $defaults{secret}  = $defaults{secret}->[0] if ref($defaults{secret}) eq 'ARRAY';
 
     $app->helper(digest_auth => sub {
         my $c = shift;
@@ -63,6 +64,8 @@ sub register
 __END__
 
 =pod
+
+=encoding UTF-8
 
 =head1 NAME
 
@@ -272,6 +275,15 @@ Quality of protection. Defaults to C<'auth'>.  C<auth-int> is not supported.
 =item * C<< realm => 'Your Realm' >>
 
 Authentication realm. Defaults to C<'WWW'>.
+
+=item * C<< secret => 'a salt value' >>
+
+Used to create the nonce. Defaults to L<your application's secret|Mojolicious/secrets>, which means
+you must set your application's secret before loading this plugin. If you're using an array the B<first value> 
+in the array will be used.
+
+B<IMPORTANT>: Changing this value will cause an HTTP 400 response to be returned to any clients with cached authentication
+credentials.
 
 =item * C<< support_broken_browsers => 1 | 0 >>
 

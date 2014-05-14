@@ -1,5 +1,7 @@
 =pod
 
+=encoding UTF-8
+
 =head1 NAME
 
 Mojolicious::Plugin::DigestAuth - HTTP Digest Authentication for Mojolicious
@@ -208,6 +210,15 @@ Quality of protection. Defaults to C<'auth'>.  C<auth-int> is not supported.
 =item * C<< realm => 'Your Realm' >>
 
 Authentication realm. Defaults to C<'WWW'>.
+
+=item * C<< secret => 'a salt value' >>
+
+Used to create the nonce. Defaults to L<your application's secret|Mojolicious/secrets>, which means
+you must set your application's secret before loading this plugin. If you're using an array the B<first value> 
+in the array will be used.
+
+B<IMPORTANT>: Changing this value will cause an HTTP 400 response to be returned to any clients with cached authentication
+credentials.
 
 =item * C<< support_broken_browsers => 1 | 0 >>
 
