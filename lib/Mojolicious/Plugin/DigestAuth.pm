@@ -88,7 +88,7 @@ Mojolicious::Plugin::DigestAuth - HTTP Digest Authentication for Mojolicious
 
 Configuration can be done globally when loading the plugin
 
-    $self->plugin('digest_auth', $options)
+    $self->plugin('digest_auth', %options)
 
 or locally when calling L<< C<digest_auth>|/digest_auth >>
 
@@ -98,9 +98,9 @@ Local options override their global counterparts. For example, the following
 will apply to all authentication requests
 
    # setup()
-   $self->plugin('digest_auth', {realm   => 'Thangz',
-                                 expires => 120,
-                                 allow   => '/path/to/htdigest_file'});
+   $self->plugin('digest_auth', realm   => 'Thangz',
+                                expires => 120,
+                                allow   => '/path/to/htdigest_file');
 
 
    # controller
@@ -155,11 +155,11 @@ Passwords must be given in plain text.
 
 =item * An htdigest style file
 
-    $self->plugin('digest_auth', { allow => '/home/sshaw/www_users' });
+    $self->plugin('digest_auth', allow => '/home/sshaw/www_users');
 
 =item * An object with a C<get()> method that returns B<hashed> passwords
 
-    $self->plugin('digest_auth', { allow => $db });
+    $self->plugin('digest_auth', allow => $db);
 
 Arguments are passed to C<get()> in the following order: C<realm, username>.
 
@@ -193,7 +193,7 @@ for all of the routes defined under the given URL:
    sub startup
    {
      my $self = shift;
-     $self->plugin('digest_auth', $options);
+     $self->plugin('digest_auth', %options);
 
      # ...
 
@@ -216,7 +216,7 @@ to your application. In Apache this can be achieved with C<mod_rewrite>:
 
 =head2 plugin
 
-     $self->plugin('digest_auth', $options)
+     $self->plugin('digest_auth', %options)
 
 Loads the plugin and sets up the defaults given by C<%options>.
 
