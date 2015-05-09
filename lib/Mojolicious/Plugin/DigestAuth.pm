@@ -10,7 +10,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 use Mojolicious::Plugin::DigestAuth::DB;
 use Mojolicious::Plugin::DigestAuth::RequestHandler;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 sub register
 {
@@ -50,7 +50,11 @@ sub register
 
         my $handler = Mojolicious::Plugin::DigestAuth::RequestHandler->new($options);
         if($route) {
-            return $c->app->routes->bridge($route)->to(cb => sub {
+	  my $r = $c->app->routes->can('bridge') ?
+	    $c->app->routes->bridge($route) :
+	    $c->app->routes->under($route);
+
+            return $r->to(cb => sub {
                 $handler->authenticate(shift);
             });
         }
@@ -279,7 +283,7 @@ Authentication realm. Defaults to C<'WWW'>.
 =item * C<< secret => 'a salt value' >>
 
 Used to create the nonce. Defaults to L<your application's secret|Mojolicious/secrets>, which means
-you must set your application's secret before loading this plugin. If you're using an array the B<first value> 
+you must set your application's secret before loading this plugin. If you're using an array the B<first value>
 in the array will be used.
 
 B<IMPORTANT>: Changing this value will cause an HTTP 400 response to be returned to any clients with cached authentication

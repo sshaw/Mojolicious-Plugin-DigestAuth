@@ -214,7 +214,7 @@ Authentication realm. Defaults to C<'WWW'>.
 =item * C<< secret => 'a salt value' >>
 
 Used to create the nonce. Defaults to L<your application's secret|Mojolicious/secrets>, which means
-you must set your application's secret before loading this plugin. If you're using an array the B<first value> 
+you must set your application's secret before loading this plugin. If you're using an array the B<first value>
 in the array will be used.
 
 B<IMPORTANT>: Changing this value will cause an HTTP 400 response to be returned to any clients with cached authentication
