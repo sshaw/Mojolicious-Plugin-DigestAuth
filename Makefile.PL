@@ -8,8 +8,8 @@ WriteMakefile(
      VERSION_FROM  => 'lib/Mojolicious/Plugin/DigestAuth.pm',
      ABSTRACT_FROM => 'lib/Mojolicious/Plugin/DigestAuth.pm',
     (eval { ExtUtils::MakeMaker->VERSION(6.46) } ?
-       (META_MERGE  => { resources => { bugtracker => 'http://github.com/sshaw/Mojolicious-Plugin-DigestAuth/issues',
-                                        repository => 'http://github.com/sshaw/Mojolicious-Plugin-DigestAuth'} }) : ())     
+       (META_MERGE  => { resources => { bugtracker => 'https://github.com/sshaw/Mojolicious-Plugin-DigestAuth/issues',
+                                        repository => 'https://github.com/sshaw/Mojolicious-Plugin-DigestAuth'} }) : ())     
 );
 
 # Create README.pod for a repo's GitHub page. Unlike CPAN, GitHub won't 
